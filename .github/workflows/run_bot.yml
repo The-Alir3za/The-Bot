@@ -2,7 +2,7 @@ name: Run Crypto Bot
 
 on:
   schedule:
-    - cron: '*/15 * * * *'   # هر ۱۵ دقیقه اجرا میشه
+    - cron: '*/5 * * * *'   # هر ۱۵ دقیقه اجرا میشه
   workflow_dispatch:         # قابلیت اجرای دستی
 
 jobs:
