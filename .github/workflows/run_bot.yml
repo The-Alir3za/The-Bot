@@ -1,13 +1,14 @@
-name: Run Crypto Bot
+name: Run Crypto Bot (RSS + HF Summarize + LibreTranslate)
 
 on:
   schedule:
-    - cron: "*/5 * * * *"  # هر ۵ دقیقه
+    - cron: "*/5 * * * *"  # هر 5 دقیقه
   workflow_dispatch:
 
 jobs:
   run:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -18,12 +19,16 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-          MARKETAUX_API_KEY: ${{ secrets.MARKETAUX_API_KEY }}
-        run: python main.py
+          HUGGINGFACE_API_TOKEN: ${{ secrets.HUGGINGFACE_API_TOKEN }}
+          LIBRE_URL: ${{ secrets.LIBRE_URL }}   # optional: you can set custom libre url in secrets
+        run: |
+          python bot.py
 
