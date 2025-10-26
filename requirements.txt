@@ -1,4 +1,4 @@
 requests
-deep-translator
-apscheduler
+feedparser
+python-dateutil
 pytz
