@@ -55,6 +55,14 @@ def fetch_crypto_news():
         summary = summarize_text(entry.summary if hasattr(entry, "summary") else title)
         fa_summary = translate_to_farsi(summary)
         message = f"📢 {title}\n\n📝 {fa_summary}\n\n🔗 [ادامه مطلب]({link})\n\n🦈 به ما بپیوندید\n@Crypto_Zone360"
+        try:
+        url = "https://cryptonews.com/news/feed/"
+        feed = feedparser.parse(url)
+        return feed.entries
+    except Exception as e:
+        print("❗️خطا در گرفتن خبر:", e)
+        return []
+
         articles.append(message)
     return articles
 
@@ -68,6 +76,9 @@ def send_message(text):
 
 @scheduler.scheduled_job("interval", minutes=5)
 def post_news():
+    print("🛰 شروع بررسی RSS فیدها...")
+    news_list = fetch_news()
+    print(f"📡 تعداد خبر دریافت‌شده: {len(news_list)}")
     print("Fetching latest news...")
     try:
         for msg in fetch_crypto_news():
