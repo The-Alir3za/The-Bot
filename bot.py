@@ -63,9 +63,6 @@ def fetch_crypto_news():
         print("❗️خطا در گرفتن خبر:", e)
         return []
 
-        articles.append(message)
-    return articles
-
 def send_message(text):
     """Send message to Telegram"""
     try:
