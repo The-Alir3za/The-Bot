@@ -1,12 +1,7 @@
 requests
 feedparser
-python-dateutil
-pytz
-transformers
-sentencepiece
-
-requests
-feedparser
 python-telegram-bot==13.15
 apscheduler
 deep-translator
+transformers
+sentencepiece
