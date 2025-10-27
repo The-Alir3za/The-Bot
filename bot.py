@@ -1,4 +1,5 @@
-# bot.py
+fa_title = translate_text(title)
+fa_summary = translate_text(summary)# bot.py
 import os
 import requests
 import feedparser
@@ -126,19 +127,18 @@ def simple_summarize(text, max_chars=350):
     return summary
 
 # --- translate via LibreTranslate (summarize first in English, then translate) ---
-def translate(text):
-    if not text:
-        return ""
+def translate_text(text):
     try:
-        payload = {"q": text, "source": "en", "target": "fa"}
-        r = requests.post(LIBRE_URL, json=payload, timeout=12)
+        payload = {"q": text, "source": "en", "target": "fa", "format": "text"}
+        r = requests.post(LIBRE_URL, json=payload, timeout=10)
         if r.status_code == 200:
-            return r.json().get("translatedText", "")
+            return r.json()["translatedText"]
         else:
-            print("LibreTranslate error:", r.status_code, r.text)
+            print("❗️Translation error:", r.text)
+            return "ترجمه ناموفق بود."
     except Exception as e:
-        print("LibreTranslate exception:", e)
-    return text
+        print("❗️Translation error:", e)
+        return "ترجمه ناموفق بود."
 
 # --- RSS fetching and parsing ------------------------------------------------
 def fetch_rss_entries():
@@ -257,8 +257,8 @@ def process_and_send():
             eng_summary = simple_summarize(summary_src, max_chars=450)
 
         # translate title and summary
-        fa_title = translate(title)
-        fa_summary = translate(eng_summary)
+        fa_title = translate_text(title)
+        fa_summary = translate_text(summary)
 
         message = (
             f"📢 {fa_title}\n\n"
