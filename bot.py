@@ -1,4 +1,3 @@
-
 import requests
 import time
 import html
@@ -9,10 +8,9 @@ import feedparser
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # --- اطلاعات ربات و توکن‌ها ---
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
-HUGGINGFACE_API_TOKEN = os.getenv("HUGGINGFACE_API_TOKEN")  # optional
-
+TELEGRAM_BOT_TOKEN = 'توکن_ربات_تلگرام'
+TELEGRAM_CHANNEL_ID = '@آیدی_چنل'
+HUGGINGFACE_TOKEN = "hf_توکن_اینجا"
 LIBRE_URL = "https://libretranslate.de/translate"
 
 # --- منابع RSS ---
