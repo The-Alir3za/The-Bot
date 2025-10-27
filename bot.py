@@ -154,3 +154,10 @@ print("✅ ربات با خلاصه‌سازی Hugging Face و ترجمه فار
 
 while True:
     time.sleep(60)
+try:
+    # اجرای اصلی ربات
+    run_news()
+except Exception as e:
+    import traceback
+    print("❗️ Error:", e)
+    traceback.print_exc()
