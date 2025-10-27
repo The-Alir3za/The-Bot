@@ -1,5 +1,4 @@
-fa_title = translate_text(title)
-fa_summary = translate_text(summary)# bot.py
+
 import os
 import requests
 import feedparser
