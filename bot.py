@@ -1,5 +1,6 @@
 import os
 import requests
+import pytz
 import feedparser
 from datetime import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -11,7 +12,9 @@ NEWS_FEED_URL = os.getenv("NEWS_FEED_URL")
 
 LIBRE_URL = "https://libretranslate.com/translate"
 
-scheduler = BlockingScheduler()
+
+scheduler = BackgroundScheduler(timezone=pytz.timezone("Asia/Tehran"))
+
 
 def summarize_text(text):
     """Summarize using HuggingFace model"""
