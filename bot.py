@@ -9,8 +9,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 # --- اطلاعات ربات و توکن‌ها ---
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
 TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
-LIBRE_URL = os.getenv("LIBRE_URL", "https://libretranslate.de/translate")
+
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")  # optional
 
 LIBRE_URL = "https://libretranslate.de/translate"
