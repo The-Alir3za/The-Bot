@@ -5,3 +5,4 @@ apscheduler
 deep-translator
 transformers
 sentencepiece
+pytz
