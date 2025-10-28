@@ -5,19 +5,20 @@ from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
 
+# Environment variables
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 HF_TOKEN = os.getenv("HF_TOKEN")
-NEWS_FEED_URL = os.getenv("NEWS_FEED_URL")
-
 LIBRE_URL = "https://libretranslate.com/translate"
 
-
+# Scheduler setup
 scheduler = BackgroundScheduler(timezone=pytz.timezone("Asia/Tehran"))
 
 
+# ===== Helper Functions =====
+
 def summarize_text(text):
-    """Summarize using HuggingFace model"""
+    """Summarize using HuggingFace"""
     try:
         response = requests.post(
             "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
@@ -32,6 +33,7 @@ def summarize_text(text):
         print("HF summarize error:", e)
     return text
 
+
 def translate_to_farsi(text):
     """Translate summary to Persian via LibreTranslate"""
     try:
@@ -40,51 +42,61 @@ def translate_to_farsi(text):
             json={"q": text, "source": "en", "target": "fa"},
             timeout=15
         )
-        return res.json()["translatedText"]
+        return res.json().get("translatedText", text)
     except Exception as e:
         print("Translation error:", e)
         return text
 
-def fetch_news():
-    print("🛰 شروع بررسی RSS فیدها...")
-    import feedparser
-
-    RSS_URL = os.getenv("NEWS_FEED_URL", "https://cryptonews.com/news/feed")
-    feed = feedparser.parse(RSS_URL)
-
-    news_items = []
-    for entry in feed.entries[:20]:
-        news_items.append({
-            "title": entry.title,
-            "link": entry.link,
-            "summary": getattr(entry, "summary", "")
-        })
-
-    print(f"📡 تعداد خبر دریافت‌شده: {len(news_items)}")
-    return news_items
 
 def send_message(text):
     """Send message to Telegram"""
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        requests.post(url, data={"chat_id": CHAT_ID, "text": text, "parse_mode": "Markdown", "disable_web_page_preview": True})
+        requests.post(url, data={
+            "chat_id": CHAT_ID,
+            "text": text,
+            "parse_mode": "Markdown",
+            "disable_web_page_preview": True
+        })
     except Exception as e:
         print("Telegram send error:", e)
 
-@scheduler.scheduled_job("interval", minutes=5)
-def fetch_news():
+
+def fetch_crypto_news():
+    """Fetch and return list of crypto news from RSS"""
     print("🛰 شروع بررسی RSS فیدها...")
-    news_list = fetch_news()
-    print(f"📡 تعداد خبر دریافت‌شده: {len(news_list)}")
+    RSS_URL = os.getenv("NEWS_FEED_URL", "https://cryptonews.com/news/feed")
+    feed = feedparser.parse(RSS_URL)
+
+    news_items = []
+    for entry in feed.entries[:5]:  # limit to 5 latest
+        news_items.append({
+            "title": entry.title,
+            "summary": getattr(entry, "summary", ""),
+            "link": entry.link
+        })
+    print(f"📡 تعداد خبر دریافت‌شده: {len(news_items)}")
+    return news_items
+
+
+# ===== Scheduled Jobs =====
+
+@scheduler.scheduled_job("interval", minutes=5)
+def post_news():
+    """Every 5 minutes: fetch, summarize, translate, and send news"""
     print("Fetching latest news...")
     try:
-        for msg in fetch_news():
+        for n in fetch_crypto_news():
+            summary = summarize_text(n["summary"])
+            translated = translate_to_farsi(summary)
+            msg = f"🗞 *{n['title']}*\n\n{translated}\n\n🔗 [منبع خبر]({n['link']})\n\n🦈 @Crypto_Zone360"
             send_message(msg)
     except Exception as e:
         print("News job error:", e)
 
+
 def get_technical_analysis(symbol):
-    """Mock simple technical analysis"""
+    """Simple technical analysis"""
     try:
         url = f"https://min-api.cryptocompare.com/data/pricemultifull?fsyms={symbol}&tsyms=USD"
         data = requests.get(url, timeout=10).json()
@@ -95,16 +107,20 @@ def get_technical_analysis(symbol):
     except:
         return f"{symbol}: داده در دسترس نیست"
 
-@scheduler.scheduled_job("cron", hour=17, minute=30)
+
+@scheduler.scheduled_job("cron", hour=21, minute=0)
 def post_daily_analysis():
+    """Send daily technical analysis at 21:00"""
     print("Sending daily analysis...")
     coins = ["BTC", "ETH", "SOL", "TON", "XRP", "BNB"]
     results = [get_technical_analysis(c) for c in coins]
-    msg = "📊 تحلیل تکنیکال روزانه بازار:\n\n" + "\n".join(results) + "\n\n⚠️ مسئولیت استفاده با کاربر است.\n\n🦈 @Crypto_Zone360"
+    msg = "📊 *تحلیل تکنیکال روزانه بازار:*\n\n" + "\n".join(results) + "\n\n⚠️ مسئولیت استفاده با کاربر است.\n\n🦈 @Crypto_Zone360"
     send_message(msg)
+
+
+# ===== Run Bot =====
 
 if __name__ == "__main__":
     print("🚀 Bot started...")
-    news = fetch_news()
-    print(news)  # first immediate news
+    post_news()  # Run once immediately
     scheduler.start()
