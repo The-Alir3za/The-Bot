@@ -45,17 +45,8 @@ def translate_to_farsi(text):
         print("Translation error:", e)
         return text
 
-def fetch_crypto_news():
-    """Fetch latest crypto news"""
-    feed = feedparser.parse(NEWS_FEED_URL)
-    articles = []
-    for entry in feed.entries[:3]:  # latest 3
-        title = entry.title
-        link = entry.link
-        summary = summarize_text(entry.summary if hasattr(entry, "summary") else title)
-        fa_summary = translate_to_farsi(summary)
-        message = f"📢 {title}\n\n📝 {fa_summary}\n\n🔗 [ادامه مطلب]({link})\n\n🦈 به ما بپیوندید\n@Crypto_Zone360"
-        try:
+def fetch_news():
+    try:
         url = "https://cryptonews.com/news/feed/"
         feed = feedparser.parse(url)
         return feed.entries
