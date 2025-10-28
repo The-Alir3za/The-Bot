@@ -4,38 +4,40 @@ import feedparser
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
+import time
 
-# Environment variables
+# --- تنظیمات ---
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 HF_TOKEN = os.getenv("HF_TOKEN")
+NEWS_FEED_URL = os.getenv("NEWS_FEED_URL", "https://cryptonews.com/news/feed")
 LIBRE_URL = "https://libretranslate.com/translate"
 
-# Scheduler setup
+# --- زمان‌بندی ---
 scheduler = BackgroundScheduler(timezone=pytz.timezone("Asia/Tehran"))
 
-
-# ===== Helper Functions =====
-
+# --- خلاصه‌سازی ---
 def summarize_text(text):
-    """Summarize using HuggingFace"""
+    """خلاصه با Hugging Face یا روش جایگزین"""
     try:
         response = requests.post(
-            "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
+            "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6",
             headers={"Authorization": f"Bearer {HF_TOKEN}"},
             json={"inputs": text[:2000]},
-            timeout=20
+            timeout=25
         )
         data = response.json()
-        if isinstance(data, list) and len(data) > 0:
+        if isinstance(data, list) and len(data) > 0 and "summary_text" in data[0]:
             return data[0]["summary_text"]
     except Exception as e:
         print("HF summarize error:", e)
-    return text
+    
+    # اگر خلاصه‌سازی شکست خورد، 3 جمله اول متن را برگردان
+    return " ".join(text.split(".")[:3])
 
-
+# --- ترجمه ---
 def translate_to_farsi(text):
-    """Translate summary to Persian via LibreTranslate"""
+    """ترجمه با LibreTranslate"""
     try:
         res = requests.post(
             LIBRE_URL,
@@ -47,56 +49,60 @@ def translate_to_farsi(text):
         print("Translation error:", e)
         return text
 
-
+# --- ارسال پیام ---
 def send_message(text):
-    """Send message to Telegram"""
+    """ارسال به تلگرام"""
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        requests.post(url, data={
+        payload = {
             "chat_id": CHAT_ID,
             "text": text,
-            "parse_mode": "Markdown",
+            "parse_mode": "HTML",
             "disable_web_page_preview": True
-        })
+        }
+        requests.post(url, data=payload, timeout=10)
+        print("✅ Sent to Telegram")
     except Exception as e:
         print("Telegram send error:", e)
 
-
-def fetch_crypto_news():
-    """Fetch and return list of crypto news from RSS"""
-    print("🛰 شروع بررسی RSS فیدها...")
-    RSS_URL = os.getenv("NEWS_FEED_URL", "https://cryptonews.com/news/feed")
-    feed = feedparser.parse(RSS_URL)
-
+# --- دریافت خبر ---
+def get_latest_news():
+    print("🛰 بررسی فید...")
+    feed = feedparser.parse(NEWS_FEED_URL)
     news_items = []
-    for entry in feed.entries[:5]:  # limit to 5 latest
-        news_items.append({
-            "title": entry.title,
-            "summary": getattr(entry, "summary", ""),
-            "link": entry.link
-        })
-    print(f"📡 تعداد خبر دریافت‌شده: {len(news_items)}")
+    for entry in feed.entries[:5]:
+        title = entry.title
+        link = entry.link
+        desc = getattr(entry, "summary", "")
+        news_items.append({"title": title, "desc": desc, "link": link})
+    print(f"📡 تعداد خبرها: {len(news_items)}")
     return news_items
 
-
-# ===== Scheduled Jobs =====
+# --- انتشار خبر ---
+posted_titles = set()
 
 @scheduler.scheduled_job("interval", minutes=5)
 def post_news():
-    """Every 5 minutes: fetch, summarize, translate, and send news"""
-    print("Fetching latest news...")
     try:
-        for n in fetch_crypto_news():
-            summary = summarize_text(n["summary"])
-            translated = translate_to_farsi(summary)
-            msg = f"🗞 *{n['title']}*\n\n{translated}\n\n🔗 [منبع خبر]({n['link']})\n\n🦈 @Crypto_Zone360"
+        news_items = get_latest_news()
+        for n in news_items:
+            if n["title"] in posted_titles:
+                continue
+            
+            print(f"📰 ارسال خبر: {n['title'][:50]}...")
+            summary = summarize_text(n["desc"])
+            fa_text = translate_to_farsi(summary)
+            fa_title = translate_to_farsi(n["title"])
+
+            msg = f"📢 <b>{fa_title}</b>\n\n📝 {fa_text}\n\n🔗 <a href='{n['link']}'>ادامه مطلب</a>\n\n👥 @Crypto_Zone360\nبه ما بپیوندید 🦈"
             send_message(msg)
+            posted_titles.add(n["title"])
+            time.sleep(5)
     except Exception as e:
         print("News job error:", e)
 
-
+# --- تحلیل تکنیکال ---
 def get_technical_analysis(symbol):
-    """Simple technical analysis"""
     try:
         url = f"https://min-api.cryptocompare.com/data/pricemultifull?fsyms={symbol}&tsyms=USD"
         data = requests.get(url, timeout=10).json()
@@ -107,20 +113,18 @@ def get_technical_analysis(symbol):
     except:
         return f"{symbol}: داده در دسترس نیست"
 
-
-@scheduler.scheduled_job("cron", hour=21, minute=0)
+@scheduler.scheduled_job("cron", hour=17, minute=30)
 def post_daily_analysis():
-    """Send daily technical analysis at 21:00"""
-    print("Sending daily analysis...")
+    print("📊 ارسال تحلیل روزانه...")
     coins = ["BTC", "ETH", "SOL", "TON", "XRP", "BNB"]
     results = [get_technical_analysis(c) for c in coins]
-    msg = "📊 *تحلیل تکنیکال روزانه بازار:*\n\n" + "\n".join(results) + "\n\n⚠️ مسئولیت استفاده با کاربر است.\n\n🦈 @Crypto_Zone360"
+    msg = "📊 تحلیل تکنیکال روزانه بازار:\n\n" + "\n".join(results) + "\n\n⚠️ مسئولیت استفاده با کاربر است.\n\n🦈 @Crypto_Zone360"
     send_message(msg)
 
-
-# ===== Run Bot =====
-
+# --- اجرای اولیه ---
 if __name__ == "__main__":
     print("🚀 Bot started...")
-    post_news()  # Run once immediately
+    post_news()  # اولین اجرا بلافاصله
     scheduler.start()
+    while True:
+        time.sleep(60)
