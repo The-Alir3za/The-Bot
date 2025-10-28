@@ -96,5 +96,5 @@ def post_daily_analysis():
 
 if __name__ == "__main__":
     print("🚀 Bot started...")
-    post_news()  # first immediate news
+    fetch_news()  # first immediate news
     scheduler.start()
