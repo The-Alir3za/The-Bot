@@ -57,7 +57,7 @@ def fetch_news():
         news_items.append({
             "title": entry.title,
             "link": entry.link,
-            "summary": entry.summary if hasattr(entry, "summary") else ""
+            "summary": getattr(entry, "summary", "")
         })
 
     print(f"📡 تعداد خبر دریافت‌شده: {len(news_items)}")
@@ -105,5 +105,6 @@ def post_daily_analysis():
 
 if __name__ == "__main__":
     print("🚀 Bot started...")
-    fetch_news()  # first immediate news
+    news = fetch_news()
+    print(news)  # first immediate news
     scheduler.start()
