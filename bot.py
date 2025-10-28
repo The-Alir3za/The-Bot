@@ -69,7 +69,7 @@ def fetch_news():
     print(f"📡 تعداد خبر دریافت‌شده: {len(news_list)}")
     print("Fetching latest news...")
     try:
-        for msg in fetch_crypto_news():
+        for msg in fetch_news():
             send_message(msg)
     except Exception as e:
         print("News job error:", e)
