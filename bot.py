@@ -11,7 +11,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 HF_TOKEN = os.getenv("HF_TOKEN")
 NEWS_FEED_URL = os.getenv("NEWS_FEED_URL", "https://cryptonews.com/news/feed")
-LIBRE_URL = "https://libretranslate.com/translate"
+LIBRE_URL = "LIBRE_URL = "https://translate.argosopentech.com/translate"
 
 # --- زمان‌بندی ---
 scheduler = BackgroundScheduler(timezone=pytz.timezone("Asia/Tehran"))
