@@ -46,13 +46,22 @@ def translate_to_farsi(text):
         return text
 
 def fetch_news():
-    try:
-        url = "https://cryptonews.com/news/feed/"
-        feed = feedparser.parse(url)
-        return feed.entries
-    except Exception as e:
-        print("❗️خطا در گرفتن خبر:", e)
-        return []
+    print("🛰 شروع بررسی RSS فیدها...")
+    import feedparser
+
+    RSS_URL = os.getenv("NEWS_FEED_URL", "https://cryptonews.com/news/feed")
+    feed = feedparser.parse(RSS_URL)
+
+    news_items = []
+    for entry in feed.entries[:20]:
+        news_items.append({
+            "title": entry.title,
+            "link": entry.link,
+            "summary": entry.summary if hasattr(entry, "summary") else ""
+        })
+
+    print(f"📡 تعداد خبر دریافت‌شده: {len(news_items)}")
+    return news_items
 
 def send_message(text):
     """Send message to Telegram"""
