@@ -63,7 +63,7 @@ def send_message(text):
         print("Telegram send error:", e)
 
 @scheduler.scheduled_job("interval", minutes=5)
-def post_news():
+def fetch_news():
     print("🛰 شروع بررسی RSS فیدها...")
     news_list = fetch_news()
     print(f"📡 تعداد خبر دریافت‌شده: {len(news_list)}")
